@@ -1,9 +1,12 @@
-from youtube_dl import YoutubeDL
-from flask import Flask, Response, request, abort
-import requests, time
+import urllib2
+import fcntl
+import os
 from subprocess import Popen, PIPE
-import fcntl, os
-import tornado
+
+import requests
+from youtube_dl import YoutubeDL
+from flask import Flask, Response, request, abort, render_template
+from mpd import MPDClient
 
 app = Flask(__name__)
 
@@ -14,23 +17,19 @@ ydl = YoutubeDL({
 
 ydl.add_default_info_extractors()
 
-def get_url(url):
-    return ydl.extract_info(url, download=False)['url']
-    #for format in info['formats']:
-    #    if format['format_id'] == u'22':
-    #        return format['url']
+def get_info(url):
+    return ydl.extract_info(url, download=False)
 
-import urllib2
-@app.route('/')
+@app.route('/stream')
 def stream():
     if not request.args.has_key('v'):
         abort(404)
     vurl = request.args.get('v')
-    if vurl.startswith('http'):
+    if vurl.startswith('http') or vurl.startswith('www'):
         vurl = urllib2.unquote(vurl)
     else:
         vurl = 'http://www.youtube.com/watch?v=' + request.args.get('v')
-    r = requests.get(get_url(vurl), stream=True)
+    r = requests.get(get_info(vurl)['url'], stream=True)
     if r.status_code == 200:
         p = Popen(["ffmpeg", "-i", "-", "-f", "mp3", "-strict", "-2", "-"],
                   stdin=PIPE, stdout=PIPE)
@@ -46,4 +45,11 @@ def stream():
                     pass
     return Response(generate())
 
-app.run(host='0.0.0.0', debug=True)
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    url = request.form.get('url', '')
+    if url:
+        mpd = MPDClient()
+        mpd.connect(host="localhost", port="6600")
+        mpd.add("http://localhost:8000/stream?t=%s&v=%s" % (urllib2.quote(get_info(url)['title']), urllib2.quote(url)))
+    return render_template('index.html', url=url)
