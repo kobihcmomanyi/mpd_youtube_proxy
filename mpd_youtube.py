@@ -3,6 +3,7 @@ from subprocess import Popen, PIPE
 
 from youtube_dl import YoutubeDL
 from flask import Flask, Response, request, abort, render_template, stream_with_context, flash, url_for
+from werkzeug.utils import secure_filename
 from mpd import MPDClient
 
 app = Flask(__name__)
@@ -72,7 +73,7 @@ def index():
                 if not 'title' in yt_info:
                     flash("Could not find the video", "danger")
                 else:
-                    mpd.add(url_for('stream', _external=True) + "?t=%s&v=%s" % (urllib2.quote(yt_info['title']), urllib2.quote(url)))
+                    mpd.add(url_for('stream', _external=True) + "?t=%s&v=%s" % (urllib2.quote(secure_filename(yt_info['title'])), urllib2.quote(url)))
                     flash("Added '" + yt_info['title'] + "' to the MPD queue.", "success")
             except Exception as e:
                 flash("Could not add video to MPD: " + str(e), "danger")
