@@ -1,12 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>YouTube MPD</title>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css">
 </head>
 <body>
-    <form method="POST" action="{{url_for('index')}}">
-        <input size="80" name="url" value="{{url}}">
-        <input type="submit" value="Add to MPD">
-    </form>
+    <div class="container">
+        <h1>MPD YouTube Player</h1>
+        <blockquote>
+          <p>Queue YouTube audio tracks on Music Player Daemon</p>
+        </blockquote>
+        {% with messages = get_flashed_messages(with_categories=True) %}
+          {% if messages %}
+            <ul class=flashes>
+            {% for category, message in messages %}
+              <div class="alert alert-{{category}}">{{ message }}</div>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+        <form role="form" method="POST" action="{{url_for('index')}}">
+            <div class="form-group">
+                <input class="form-control" id="url" name="url" placeholder="YouTube URL">
+            </div>
+
+            <input type="submit" class="btn btn-success" value="Add to MPD">
+        </form>
+    </div>
 </body>
 </html>

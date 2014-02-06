@@ -5,8 +5,16 @@ This proxy acts as HTTP server and serves the audio stream of a given
 YouTube video as mp3 stream. The video is converted to mp3 on the fly
 using ffmpeg.
 
+Requirements
+------------
+
+* Python 2.7+
+* ffmpeg
+
 Install
 -------
+
+Adjust the app.config settings at the beginning of mpd_youtube.py
 
 In the folder run:
 

@@ -2,11 +2,16 @@ import urllib2, io, fcntl, os, time
 from subprocess import Popen, PIPE
 
 from youtube_dl import YoutubeDL
-from flask import Flask, Response, request, abort, render_template, stream_with_context
+from flask import Flask, Response, request, abort, render_template, stream_with_context, flash, url_for
 from mpd import MPDClient
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
+app.config['SECRET_KEY'] = 'not so secret'
+app.config["MPD_HOST"] = "localhost"
+app.config["MPD_PORT"] = "6600"
+app.config['MPD_PASSWORD'] = ""
+app.config['SERVER_URL'] = 'http://localhost'
 
 ydl = YoutubeDL({
     'forceurl': True,
@@ -35,7 +40,7 @@ def stream():
         vurl = 'http://www.youtube.com/watch?v=' + request.args.get('v')
 
     yt_info = get_info(vurl)
-
+    
     def generate():
         p = Popen(["ffmpeg", "-i", get_url(yt_info), "-f", "mp3", "-vn", "-ab", "256k", "-strict", "-2", "-"],
                   stdout=PIPE)
@@ -56,8 +61,21 @@ def stream():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     url = request.form.get('url', '')
-    if url:
+    try:
         mpd = MPDClient()
-        mpd.connect(host="localhost", port="6600")
-        mpd.add("http://localhost:8000/stream?v=%s" % (urllib2.quote(url),))
-    return render_template('index.html', url=url)
+        mpd.connect(host=app.config["MPD_HOST"], port=app.config["MPD_PORT"])
+        if app.config["MPD_PASSWORD"]:
+            mpd.password(app.config["MPD_PASSWORD"])
+        if url:
+            try:
+                yt_info = get_info(url)
+                if not 'title' in yt_info:
+                    flash("Could not find the video", "danger")
+                else:
+                    mpd.add(url_for('stream', _external=True) + "?t=%s&v=%s" % (urllib2.quote(yt_info['title']), urllib2.quote(url)))
+                    flash("Added '" + yt_info['title'] + "' to the MPD queue.", "success")
+            except Exception as e:
+                flash("Could not add video to MPD: " + str(e), "danger")
+    except Exception as e:
+        flash("Could not connect to MPD. " + str(e), "danger")
+    return render_template('index.html', url=url, )
