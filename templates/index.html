@@ -7,10 +7,14 @@
 </head>
 <body>
     <div class="container">
+        <img style="float:right" width="100px" src="{{url_for('static', filename='sound.png')}}" alt="sound icon">
+
+
         <h1>MPD YouTube Player</h1>
         <blockquote>
           <p>Queue YouTube audio tracks on Music Player Daemon</p>
         </blockquote>
+
         {% with messages = get_flashed_messages(with_categories=True) %}
           {% if messages %}
             <ul class=flashes>

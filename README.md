@@ -25,3 +25,8 @@ In the folder run:
 
 Navigate to http://localhost:8000 (gunicorn default) and enter a youtube URL or
 ID (see /watch?v=<id>). The application adds the required proxied URL to MPD.
+
+Attributions
+------------
+
+static/sound.png by http://brsev.com/
