@@ -6,6 +6,7 @@ from flask import Flask, Response, request, abort, render_template, stream_with_
 from mpd import MPDClient
 
 app = Flask(__name__)
+app.config["DEBUG"] = True
 
 ydl = YoutubeDL({
     'forceurl': True,
@@ -33,23 +34,24 @@ def stream():
     else:
         vurl = 'http://www.youtube.com/watch?v=' + request.args.get('v')
 
+    yt_info = get_info(vurl)
+
     def generate():
-        p = Popen(["ffmpeg", "-i", get_url(get_info(vurl)), "-f", "mp3", "-ab", "256k", "-strict", "-2", "-"],
+        p = Popen(["ffmpeg", "-i", get_url(yt_info), "-f", "mp3", "-vn", "-ab", "256k", "-strict", "-2", "-"],
                   stdout=PIPE)
-        #fcntl.fcntl(p.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
-        while True:
-            try:
-                # Send output at slightly more than 256k (the encoding bitrate)
-                # to avoid overfilling buffers or something...
-                time.sleep(0.99)
-                output = p.stdout.read(256*128)
-                if not output:
-                    print "Done"
-                    return
-                yield output
-            except IOError as e:
-                time.sleep(0.01)
-    return Response(stream_with_context(generate()))
+        output = p.stdout.read(256*128)
+        while output:
+            yield output
+            output = p.stdout.read(256*128)
+        p.stdout.close()
+        p.wait()
+    return Response(stream_with_context(generate()),
+                    headers={
+                        "Content-Type": "audio/mp3",
+                        "icy-name": yt_info['title'],
+                        "icy-bitrate": "256",
+                        "ice-audio-info": "bitrate=256",
+                        "Cache-Control": "no-cache"})
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -57,6 +59,5 @@ def index():
     if url:
         mpd = MPDClient()
         mpd.connect(host="localhost", port="6600")
-        mpd.add("http://localhost:8000/stream?t=%s&v=%s" % (urllib2.quote(get_info(url)['title']), urllib2.quote(url)))
-        print
+        mpd.add("http://localhost:8000/stream?v=%s" % (urllib2.quote(url),))
     return render_template('index.html', url=url)
