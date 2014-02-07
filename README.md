@@ -10,6 +10,7 @@ Requirements
 
 * Python 2.7+
 * ffmpeg
+* lame
 
 Install
 -------

@@ -28,9 +28,12 @@ def get_info(url):
 
 def get_url(info):
     for format in info['formats']:
-        if format['format_id'] == u'140':
+        if format['format_id'] == u'141': # prefer 141 = m4a [256k] (DASH Audio)
             return format['url']
-    return info['url']
+    for format in info['formats']:
+        if format['format_id'] == u'140': # prefer 140 = m4a [128k] (DASH Audio)
+            return format['url']
+    return info['url'] # otherwise use the default
 
 @app.route('/stream')
 def stream():
@@ -66,7 +69,10 @@ def stream():
                 output = p.stdout.read(256*128)
             if cache_file:
                 cache_file.close()
-                os.rename(cache_filename + '.part', cache_filename)
+                Popen(['lame', '--mp3input', '-h', '-b', '256', '--add-id3v2', '--tt', yt_info['title'],
+                       cache_filename + '.part', cache_filename]).wait()
+                os.remove(cache_filename + '.part')
+                print "Saved title to disk"
         finally:
             if cache_file:
                 cache_file.close()
