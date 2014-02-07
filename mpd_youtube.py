@@ -1,4 +1,4 @@
-import urllib2, io, fcntl, os, time
+import urllib2
 from subprocess import Popen, PIPE
 
 from youtube_dl import YoutubeDL
@@ -54,7 +54,7 @@ def stream():
     return Response(stream_with_context(generate()),
                     headers={
                         "Content-Type": "audio/mp3",
-                        "icy-name": yt_info['title'],
+                        "icy-name": yt_info['title'].encode('latin-1', 'ignore'),
                         "icy-bitrate": "256",
                         "ice-audio-info": "bitrate=256",
                         "Cache-Control": "no-cache"})
