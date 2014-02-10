@@ -8,7 +8,7 @@ using ffmpeg.
 Requirements
 ------------
 
-* Python 2.7+
+* Python 3
 * ffmpeg
 * lame
 
@@ -19,7 +19,7 @@ Adjust the app.config settings at the beginning of mpd_youtube.py
 
 In the folder run:
 
-    > virtualenv2 myenv
+    > virtualenv myenv
     > source myenv/bin/activate
     > pip install flask python-mpd2 youtube-dl gunicorn
     > gunicorn -w 10 -b 0.0.0.0 -t 999999999 mpd_youtube:app
