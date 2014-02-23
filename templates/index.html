@@ -4,33 +4,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>YouTube MPD</title>
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.13/angular.min.js" type="text/javascript"></script>
+    <script src="{{url_for('static', filename='js/app.js')}}" type="text/javascript"></script>
 </head>
 <body>
-    <div class="container">
-        <img style="float:right" width="100px" src="{{url_for('static', filename='sound.png')}}" alt="sound icon">
+<div class="container">
+    <img style="float:right" width="100px" src="{{url_for('static', filename='sound.png')}}" alt="sound icon">
 
+    <h1>MPD YouTube Player</h1>
+    <blockquote>
+      <p>Queue YouTube audio tracks on Music Player Daemon</p>
+    </blockquote>
 
-        <h1>MPD YouTube Player</h1>
-        <blockquote>
-          <p>Queue YouTube audio tracks on Music Player Daemon</p>
-        </blockquote>
-
-        {% with messages = get_flashed_messages(with_categories=True) %}
-          {% if messages %}
-            <ul class=flashes>
-            {% for category, message in messages %}
-              <div class="alert alert-{{category}}">{{ message }}</div>
-            {% endfor %}
-            </ul>
-          {% endif %}
-        {% endwith %}
-        <form role="form" method="POST" action="{{url_for('index')}}">
+{% raw %}
+<div id="app" ng-app="mpdApp">
+    <div ng-controller="TitleCtrl">
+        <div ng-bind="message.message" ng-class="message.class"></div>
+        <form  ng-submit="addTitle()" role="form">
             <div class="form-group">
-                <input class="form-control" id="url" name="url" placeholder="YouTube URL">
+                <input class="form-control" id="url" name="url" ng-model="title.url" placeholder="YouTube URL">
             </div>
-
             <input type="submit" class="btn btn-success" value="Add to MPD">
         </form>
     </div>
+</div>
+{% endraw %}
+
+</div>
 </body>
 </html>

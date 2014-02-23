@@ -5,6 +5,7 @@ from subprocess import Popen, PIPE
 
 from youtube_dl import YoutubeDL
 from flask import Flask, Response, request, abort, render_template, stream_with_context, flash, url_for, make_response
+from flask import jsonify
 from werkzeug.utils import secure_filename
 from mpd import MPDClient
 
@@ -90,9 +91,10 @@ def stream():
                         "Cache-Control": "no-cache"})
 
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    url = request.form.get('url', '')
+@app.route('/title/add', methods=['POST'])
+def title_add():
+    result = {}
+    url = request.form.get('url')
     try:
         mpd = MPDClient()
         mpd.connect(host=app.config["MPD_HOST"], port=app.config["MPD_PORT"])
@@ -102,14 +104,32 @@ def index():
             try:
                 yt_info = get_info(url)
                 if not 'title' in yt_info:
-                    flash("Could not find the video", "danger")
+                    result['message'] = 'Could not find the video'
+                    result['class'] = 'alert alert-danger'
                 else:
                     mpd.add(url_for('stream', _external=True) + "?t=%s&v=%s" % (
                         quote(secure_filename(yt_info['title'])), quote(url)))
-                    flash("Added '" + yt_info['title'] + "' to the MPD queue.", "success")
+                    result['message'] = "Added '" + yt_info['title'] + "' to the MPD queue."
+                    result['class'] = "alert alert-success"
             except Exception as e:
-                flash("Could not add video to MPD: " + str(e), "danger")
+                result['message'] = "Could not add video to MPD: " + str(e)
+                result['class'] = "alert alert-danger"
+    except Exception as e:
+        result['message'] = "Could not connect to MPD. " + str(e)
+        result['class'] = "alert alert-danger"
+    return jsonify(result)
+
+
+@app.route('/')
+def index():
+    try:
+        mpd = MPDClient()
+        mpd.connect(host=app.config["MPD_HOST"], port=app.config["MPD_PORT"])
+        if app.config["MPD_PASSWORD"]:
+            mpd.password(app.config["MPD_PASSWORD"])
     except Exception as e:
         flash("Could not connect to MPD. " + str(e), "danger")
-    return render_template('index.html', url=url, )
+    return render_template('index.html')
 
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
