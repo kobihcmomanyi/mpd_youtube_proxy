@@ -1,4 +1,5 @@
 import os
+import json
 
 from urllib.parse import unquote, quote
 from subprocess import Popen, PIPE
@@ -94,26 +95,25 @@ def stream():
 @app.route('/title/add', methods=['POST'])
 def title_add():
     result = {}
-    url = request.form.get('url')
+    url = request.json['url']
     try:
         mpd = MPDClient()
         mpd.connect(host=app.config["MPD_HOST"], port=app.config["MPD_PORT"])
         if app.config["MPD_PASSWORD"]:
             mpd.password(app.config["MPD_PASSWORD"])
-        if url:
-            try:
-                yt_info = get_info(url)
-                if not 'title' in yt_info:
-                    result['message'] = 'Could not find the video'
-                    result['class'] = 'alert alert-danger'
-                else:
-                    mpd.add(url_for('stream', _external=True) + "?t=%s&v=%s" % (
-                        quote(secure_filename(yt_info['title'])), quote(url)))
-                    result['message'] = "Added '" + yt_info['title'] + "' to the MPD queue."
-                    result['class'] = "alert alert-success"
-            except Exception as e:
-                result['message'] = "Could not add video to MPD: " + str(e)
-                result['class'] = "alert alert-danger"
+        try:
+            yt_info = get_info(url)
+            if not 'title' in yt_info:
+                result['message'] = 'Could not find the video'
+                result['class'] = 'alert alert-danger'
+            else:
+                mpd.add(url_for('stream', _external=True) + "?t=%s&v=%s" % (
+                    quote(secure_filename(yt_info['title'])), quote(url)))
+                result['message'] = "Added '" + yt_info['title'] + "' to the MPD queue."
+                result['class'] = "alert alert-success"
+        except Exception as e:
+            result['message'] = "Could not add video to MPD: " + str(e)
+            result['class'] = "alert alert-danger"
     except Exception as e:
         result['message'] = "Could not connect to MPD. " + str(e)
         result['class'] = "alert alert-danger"
